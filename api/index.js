@@ -7,9 +7,11 @@ const bcrypt = require('bcryptjs');
 const app = express();
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
-const multer = require('multer');
-const uploadMiddleware = multer({ dest: 'uploads/' })
 const path = require('path');
+const multer = require('multer');
+const uploadMiddleware = multer({
+    dest: path.join(__dirname, 'uploads')
+});
 const fs = require('fs');
 
 
@@ -22,6 +24,7 @@ app.use(cors({credentials:true,origin:'http://localhost:3000'}));
 app.use(express.json());
 app.use(cookieParser());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 
 
 

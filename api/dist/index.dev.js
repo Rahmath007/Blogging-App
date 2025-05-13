@@ -18,15 +18,15 @@ var jwt = require('jsonwebtoken');
 
 var cookieParser = require('cookie-parser');
 
+var path = require('path');
+
 var multer = require('multer');
 
 var uploadMiddleware = multer({
-  dest: __dirname + '/uploads/'
+  dest: path.join(__dirname, 'uploads')
 });
 
 var fs = require('fs');
-
-require('dotenv').config();
 
 var salt = bcrypt.genSaltSync(10);
 var secret = 'adhasdhsahdhsainsafusaiufaf';
@@ -36,8 +36,8 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
-app.use('/uploads', express["static"](__dirname + '/uploads'));
-mongoose.connect('mongodb+srv://blog:pJNASYx0CS6j90vp@cluster0.v8kw5va.mongodb.net/?retryWrites=true&w=majority');
+app.use('/uploads', express["static"](path.join(__dirname, 'uploads')));
+mongoose.connect('mongodb+srv://blog:Rahmath1998@cluster0.v8kw5va.mongodb.net/?retryWrites=true&w=majority');
 app.post('/register', function _callee(req, res) {
   var _req$body, username, password, userDoc;
 
@@ -72,44 +72,72 @@ app.post('/register', function _callee(req, res) {
   }, null, null, [[1, 8]]);
 });
 app.post('/login', function _callee2(req, res) {
-  var _req$body2, username, password, userDoc, passOk;
+  var _req$body2, username, password, userDoc, isPassOk;
 
   return regeneratorRuntime.async(function _callee2$(_context2) {
     while (1) {
       switch (_context2.prev = _context2.next) {
         case 0:
           _req$body2 = req.body, username = _req$body2.username, password = _req$body2.password;
-          _context2.next = 3;
+          _context2.prev = 1;
+          _context2.next = 4;
           return regeneratorRuntime.awrap(User.findOne({
             username: username
           }));
 
-        case 3:
+        case 4:
           userDoc = _context2.sent;
-          passOk = bcrypt.compareSync(password, userDoc.password);
 
-          if (passOk) {
-            // login success
-            jwt.sign({
-              username: username,
-              id: userDoc._id
-            }, secret, {}, function (err, token) {
-              if (err) throw err;
-              res.cookie('token', token).json({
-                id: userDoc._id,
-                username: username
-              });
-            });
-          } else {
-            res.status(400).json('wrong credentials');
+          if (userDoc) {
+            _context2.next = 7;
+            break;
           }
 
-        case 6:
+          return _context2.abrupt("return", res.status(400).json({
+            error: 'User not found'
+          }));
+
+        case 7:
+          isPassOk = bcrypt.compareSync(password, userDoc.password);
+
+          if (isPassOk) {
+            _context2.next = 10;
+            break;
+          }
+
+          return _context2.abrupt("return", res.status(400).json({
+            error: 'Incorrect password'
+          }));
+
+        case 10:
+          // if correct, generate token
+          jwt.sign({
+            username: username,
+            id: userDoc._id
+          }, secret, {}, function (err, token) {
+            if (err) throw err;
+            res.cookie('token', token).json({
+              id: userDoc._id,
+              username: username
+            });
+          });
+          _context2.next = 17;
+          break;
+
+        case 13:
+          _context2.prev = 13;
+          _context2.t0 = _context2["catch"](1);
+          console.error('Login error:', _context2.t0);
+          res.status(500).json({
+            error: 'Internal server error'
+          });
+
+        case 17:
         case "end":
           return _context2.stop();
       }
     }
-  });
+  }, null, null, [[1, 13]]);
 });
 app.get('/profile', function (req, res) {
   var token = req.cookies.token;
@@ -179,7 +207,7 @@ app.post('/post', uploadMiddleware.single('file'), function _callee4(req, res) {
   });
 });
 app.put('/post', uploadMiddleware.single('file'), function _callee6(req, res) {
-  var newPath, _req$file2, originalname, path, parts, ext, token;
+  var newPath, _req$file2, originalname, _path, parts, ext, token;
 
   return regeneratorRuntime.async(function _callee6$(_context6) {
     while (1) {
@@ -188,11 +216,11 @@ app.put('/post', uploadMiddleware.single('file'), function _callee6(req, res) {
           newPath = null;
 
           if (req.file) {
-            _req$file2 = req.file, originalname = _req$file2.originalname, path = _req$file2.path;
+            _req$file2 = req.file, originalname = _req$file2.originalname, _path = _req$file2.path;
             parts = originalname.split('.');
             ext = parts[parts.length - 1];
-            newPath = path + '.' + ext;
-            fs.renameSync(path, newPath);
+            newPath = _path + '.' + ext;
+            fs.renameSync(_path, newPath);
           }
 
           token = req.cookies.token;
