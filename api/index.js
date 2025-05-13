@@ -8,9 +8,10 @@ const app = express();
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const multer = require('multer');
-const uploadMiddleware = multer({ dest: __dirname + '/uploads/' });
+const uploadMiddleware = multer({ dest: 'uploads/' })
+const path = require('path');
 const fs = require('fs');
-require('dotenv').config();
+
 
 
 const salt = bcrypt.genSaltSync(10);
@@ -20,10 +21,11 @@ const secret= 'adhasdhsahdhsainsafusaiufaf';
 app.use(cors({credentials:true,origin:'http://localhost:3000'}));
 app.use(express.json());
 app.use(cookieParser());
-app.use('/uploads', express.static(__dirname + '/uploads'));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 
-mongoose.connect('mongodb+srv://blog:pJNASYx0CS6j90vp@cluster0.v8kw5va.mongodb.net/?retryWrites=true&w=majority');
+
+mongoose.connect('mongodb+srv://blog:Rahmath1998@cluster0.v8kw5va.mongodb.net/?retryWrites=true&w=majority');
 
 app.post('/register', async (req, res) => {
     const {username,password} = req.body;
@@ -40,21 +42,31 @@ app.post('/register', async (req, res) => {
 });
 
 app.post('/login', async (req, res) => {
-    const {username,password} = req.body;
-    const userDoc = await User.findOne({username});
-    const passOk = bcrypt.compareSync(password, userDoc.password);
-    if (passOk) {
-        // login success
-        jwt.sign({username,id:userDoc._id}, secret, {}, (err, token) => {
-            if (err) throw err;
-            res.cookie('token', token).json({
-                id: userDoc._id,
-                username,
-            });
-        });
-    } else {
-        res.status(400).json('wrong credentials')
+const { username, password } = req.body;
+
+try {
+    const userDoc = await User.findOne({ username });
+    if (!userDoc) {
+    return res.status(400).json({ error: 'User not found' });
     }
+
+    const isPassOk = bcrypt.compareSync(password, userDoc.password);
+    if (!isPassOk) {
+    return res.status(400).json({ error: 'Incorrect password' });
+    }
+
+    // if correct, generate token
+    jwt.sign({ username, id: userDoc._id }, secret, {}, (err, token) => {
+    if (err) throw err;
+    res.cookie('token', token).json({
+        id: userDoc._id,
+        username,
+    });
+    });
+} catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+}
 });
 
 app.get('/profile', (req, res) => {
@@ -166,4 +178,3 @@ app.delete('/post/:id', async (req, res) => {
 app.listen(4000);
 
 //mongodb+srv://blog:NuISz2RpwKqkydtr@cluster0.99nbzir.mongodb.net/?retryWrites=true&w=majority
-
