@@ -99,7 +99,7 @@ app.post('/post', uploadMiddleware.single('file') ,async (req, res) => {
         title,
         summary,
         content,
-        cover: newPath,
+        cover:  req.file.filename + '.' + ext,
         author: info.id,
 
     });
